@@ -1,0 +1,141 @@
+object fmShowDependente: TfmShowDependente
+  Left = 485
+  Top = 197
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Show Dependente'
+  ClientHeight = 354
+  ClientWidth = 556
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Font.Style = []
+  OldCreateOrder = False
+  Position = poScreenCenter
+  OnActivate = FormActivate
+  OnClose = FormClose
+  PixelsPerInch = 96
+  TextHeight = 13
+  object Panel1: TPanel
+    Left = 0
+    Top = 313
+    Width = 556
+    Height = 41
+    Align = alBottom
+    TabOrder = 0
+    object Button1: TButton
+      Left = 464
+      Top = 8
+      Width = 75
+      Height = 25
+      Caption = '&Fechar'
+      TabOrder = 0
+      OnClick = Button1Click
+    end
+    object Edit1: TEdit
+      Left = 16
+      Top = 8
+      Width = 441
+      Height = 21
+      CharCase = ecUpperCase
+      TabOrder = 1
+      OnChange = Edit1Change
+    end
+  end
+  object DBGrid1: TDBGrid
+    Left = 0
+    Top = 0
+    Width = 556
+    Height = 313
+    Align = alClient
+    DataSource = dscliente
+    TabOrder = 1
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -11
+    TitleFont.Name = 'MS Sans Serif'
+    TitleFont.Style = []
+    OnDrawColumnCell = DBGrid1DrawColumnCell
+    OnDblClick = DBGrid1DblClick
+    OnKeyPress = DBGrid1KeyPress
+    Columns = <
+      item
+        Expanded = False
+        FieldName = 'IDCLIENTE'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = []
+        Title.Caption = 'ID. CLIENTE'
+        Title.Font.Charset = DEFAULT_CHARSET
+        Title.Font.Color = clWindowText
+        Title.Font.Height = -11
+        Title.Font.Name = 'MS Sans Serif'
+        Title.Font.Style = [fsBold]
+        Width = 81
+        Visible = True
+      end
+      item
+        Expanded = False
+        FieldName = 'NOME'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = []
+        Title.Font.Charset = DEFAULT_CHARSET
+        Title.Font.Color = clWindowText
+        Title.Font.Height = -11
+        Title.Font.Name = 'MS Sans Serif'
+        Title.Font.Style = [fsBold]
+        Width = 370
+        Visible = True
+      end
+      item
+        Expanded = False
+        FieldName = 'PARENTESCO'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = []
+        Title.Font.Charset = DEFAULT_CHARSET
+        Title.Font.Color = clWindowText
+        Title.Font.Height = -11
+        Title.Font.Name = 'MS Sans Serif'
+        Title.Font.Style = [fsBold]
+        Width = 114
+        Visible = True
+      end>
+  end
+  object dscliente: TDataSource
+    DataSet = cdscliente
+    Left = 24
+    Top = 216
+  end
+  object dspcliente: TDataSetProvider
+    DataSet = sqlcliente
+    Options = [poIncFieldProps, poAllowCommandText]
+    Left = 24
+    Top = 184
+  end
+  object cdscliente: TClientDataSet
+    Aggregates = <>
+    PacketRecords = 20
+    Params = <>
+    ProviderName = 'dspcliente'
+    Left = 24
+    Top = 152
+  end
+  object sqlcliente: TSQLDataSet
+    CommandText = 'select * from CLIENTE where DEPENDENTE='#39'S'#39
+    MaxBlobSize = -1
+    Params = <>
+    SQLConnection = dmconect.SQLConnection1
+    Left = 24
+    Top = 120
+  end
+end

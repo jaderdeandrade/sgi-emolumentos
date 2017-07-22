@@ -1,0 +1,196 @@
+unit UnitMovimentoCaixa;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ComCtrls, FMTBcd, SqlExpr, DB, DBClient, Provider,
+  ExtCtrls;
+
+type
+  TfmFechaMovimentoCaixa = class(TForm)
+    dsMovCaixa: TDataSource;
+    dspMovCaixa: TDataSetProvider;
+    cdsMovCaixa: TClientDataSet;
+    sqlMovCaixa: TSQLQuery;
+    dsCaixa: TDataSource;
+    dspCaixa: TDataSetProvider;
+    cdsCaixa: TClientDataSet;
+    sqlCaixa: TSQLDataSet;
+    sqlcredito: TSQLDataSet;
+    sqlcreditoSUM: TFMTBCDField;
+    cdscredito: TClientDataSet;
+    cdscreditoSUM: TFMTBCDField;
+    dspcredito: TDataSetProvider;
+    dscredito: TDataSource;
+    dsdebito: TDataSource;
+    dspdebito: TDataSetProvider;
+    cdsdebito: TClientDataSet;
+    cdsdebitoSUM: TFMTBCDField;
+    sqldebito: TSQLDataSet;
+    sqldebitoSUM: TFMTBCDField;
+    sqlCaixaIDCAIXA: TIntegerField;
+    sqlCaixaDESCRICAO: TStringField;
+    sqlCaixaSALDO: TStringField;
+    sqlCaixaDATA_LANCAMENTO: TDateField;
+    sqlCaixaVALOR: TFMTBCDField;
+    sqlCaixaUSUARIO: TStringField;
+    sqlCaixaCONTA: TStringField;
+    sqlCaixaIDMOVIMENTO: TIntegerField;
+    cdsCaixaIDCAIXA: TIntegerField;
+    cdsCaixaDESCRICAO: TStringField;
+    cdsCaixaSALDO: TStringField;
+    cdsCaixaDATA_LANCAMENTO: TDateField;
+    cdsCaixaVALOR: TFMTBCDField;
+    cdsCaixaUSUARIO: TStringField;
+    cdsCaixaCONTA: TStringField;
+    cdsCaixaIDMOVIMENTO: TIntegerField;
+    sqlMovCaixaIDMOVIMENTO: TIntegerField;
+    sqlMovCaixaDATA_ABERTURA: TDateField;
+    sqlMovCaixaHORA_ABERTURA: TTimeField;
+    sqlMovCaixaDATA_FECHAMENTO: TDateField;
+    sqlMovCaixaHORA_FECHAMENTO: TTimeField;
+    sqlMovCaixaUSUARIO_ABERTURA: TStringField;
+    sqlMovCaixaUSUARIO_FECHAMENTO: TStringField;
+    sqlMovCaixaVALOR_ABERTURA: TFMTBCDField;
+    sqlMovCaixaVALOR_FECHAMENTO: TFMTBCDField;
+    sqlMovCaixaATIVO: TStringField;
+    cdsMovCaixaIDMOVIMENTO: TIntegerField;
+    cdsMovCaixaDATA_ABERTURA: TDateField;
+    cdsMovCaixaHORA_ABERTURA: TTimeField;
+    cdsMovCaixaDATA_FECHAMENTO: TDateField;
+    cdsMovCaixaHORA_FECHAMENTO: TTimeField;
+    cdsMovCaixaUSUARIO_ABERTURA: TStringField;
+    cdsMovCaixaUSUARIO_FECHAMENTO: TStringField;
+    cdsMovCaixaVALOR_ABERTURA: TFMTBCDField;
+    cdsMovCaixaVALOR_FECHAMENTO: TFMTBCDField;
+    cdsMovCaixaATIVO: TStringField;
+    GroupBox1: TGroupBox;
+    lbcometario: TLabel;
+    Image1: TImage;
+    btFechaCaixa: TButton;
+    btCancela: TButton;
+    procedure btCancelaClick(Sender: TObject);
+    procedure btFechaCaixaClick(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+  private
+    { Private declarations }
+  public
+    procedure filtro;
+    { Public declarations }
+  end;
+
+var
+  idmovimentocaixa: integer;
+  fmFechaMovimentoCaixa: TfmFechaMovimentoCaixa;
+  valor,debito,credito: real;
+implementation
+  uses UnitDmSesi,UnitdmConect, UnitSesi;
+{$R *.dfm}
+
+procedure TfmFechaMovimentoCaixa.btCancelaClick(Sender: TObject);
+begin
+  close;
+end;
+
+procedure TfmFechaMovimentoCaixa.btFechaCaixaClick(Sender: TObject);
+begin
+  dmsesi.cdsMovCaixa.Close;
+  dmsesi.cdsMovCaixa.CommandText:='select * from movimento_caixa where '+
+          ' (movimento_caixa.ativo='+QuotedStr('1')+') '+
+          ' and (movimento_caixa.data_fechamento is null)';
+  dmsesi.cdsMovCaixa.Open;
+  if not dmsesi.cdsMovCaixa.IsEmpty then
+    begin
+      Beep;
+      if messagedlg('Confirma fechamento do Caixa?',mtWarning, [mbyes,mbno],0)= mryes then
+        begin
+          filtro;
+          dmsesi.cdsMovCaixa.Active:=true;
+          dmsesi.cdsMovCaixa.Edit;
+          dmsesi.cdsMovCaixaATIVO.AsString:='0';
+          dmsesi.cdsMovCaixaDATA_FECHAMENTO.AsDateTime:= date;
+          dmsesi.cdsMovCaixaHORA_FECHAMENTO.AsDateTime:= Time;
+          dmsesi.cdsMovCaixaUSUARIO_FECHAMENTO.AsString:=fmSesi.USUARIO;
+          dmsesi.cdsMovCaixaVALOR_FECHAMENTO.AsFloat:= valor + dmsesi.cdsMovCaixaVALOR_ABERTURA.AsFloat;
+          dmsesi.cdsMovCaixa.ApplyUpdates(0);
+          btFechaCaixa.Enabled:=false;
+          Image1.Visible:=false;
+          lbcometario.Caption :='O movimento de caixa foi fechado com suscesso!';
+         end;
+    end;
+end;
+
+procedure TfmFechaMovimentoCaixa.filtro;
+var
+ data1: Tdate;
+begin
+  valor:= 0;
+  credito:=0;
+  debito:= 0;
+  data1:= date;
+  {converta a data no padrao americano}
+  ShortDateFormat:='mm/dd/YYYY';
+  // agrupa caixa e tipo de operações para saber o histórico de cada lançamento
+  // seleciona o movimento de caixa
+  // seleciona o numero do caixa
+  cdscaixa.Close;
+  cdsCaixa.CommandText:='select * from CAIXA where  '+
+              '(CAIXA.IDMOVIMENTO='+QuotedStr(IntToStr(idmovimentocaixa))+')';
+  cdsCaixa.Open;
+  {retornar a data no formato portugues}
+  // somatorio dos creditos
+  cdscredito.Close;
+  cdscredito.CommandText:='Select sum(VALOR) from CAIXA where (CAIXA.SALDO ='+QuotedStr('C')+') ' +
+              'and (CAIXA.IDMOVIMENTO='+QuotedStr(IntToStr(idmovimentocaixa))+')';
+  cdscredito.open;
+  // somatorio dos debitos
+  cdsdebito.Close;
+  cdsdebito.CommandText:='Select sum(VALOR) from CAIXA where (CAIXA.SALDO ='+QuotedStr('D')+') ' +
+              'and (CAIXA.IDMOVIMENTO='+QuotedStr(IntToStr(idmovimentocaixa))+')';
+  cdsdebito.open;
+
+  credito:=cdscredito.fieldbyname('SUM').AsFloat;  // somatorio dos creditos
+  debito:=cdsdebito.fieldbyname('SUM').AsFloat;   // somatorio dos debitos
+
+  valor:= credito - debito;  // total disponivel
+  ShortDateFormat:='dd/mm/YYYY';
+
+end;
+
+procedure TfmFechaMovimentoCaixa.FormActivate(Sender: TObject);
+begin
+  dmsesi.cdsMovCaixa.Active:=true;
+  dmsesi.cdsMovCaixa.Close;
+  dmsesi.cdsMovCaixa.CommandText:='select * from movimento_caixa where '+
+            ' (movimento_caixa.ativo='+QuotedStr('1')+') '+
+            ' and (movimento_caixa.data_fechamento is null)';
+   dmsesi.cdsMovCaixa.Open;
+
+   idmovimentocaixa:=dmsesi.cdsMovCaixaIDMOVIMENTO.AsInteger;
+   if dmsesi.cdsMovCaixa.IsEmpty then
+      begin
+        lbcometario.Caption :='Não existe movimento de caixa aberto!';
+        btFechaCaixa.Enabled:=false;
+        Image1.Visible:=false;
+      end
+   else
+   if not dmsesi.cdsMovCaixa.IsEmpty then
+      begin
+        lbcometario.Caption :='O movimento de caixa Nº: ' +
+                dmsesi.cdsMovCaixa.FieldByName('IDMOVIMENTO').AsString  +
+                ' está aberto.'+ #13 +
+                ' Deseja fechá-lo? Então clique no botão abaixo. ';
+        btFechaCaixa.Enabled:=true;
+        Image1.Visible:=true;
+      end;
+end;
+
+procedure TfmFechaMovimentoCaixa.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+  action:= cafree;
+end;
+
+end.
